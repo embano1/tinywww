@@ -6,12 +6,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
+	"unicode"
 )
 
 var (
 	// where to serve the bootstrap log
-	logHandlerPath = "/bootstrap"
+	handlerPath string
 	// protect the http server with some sane timeouts
 	httpTimeout = 10 * time.Second
 	// log file (not path) to serve
@@ -28,6 +30,7 @@ var (
 
 func main() {
 
+	flag.StringVar(&handlerPath, "handler", "/bootstrap", "Path where to register the http handler")
 	flag.StringVar(&file, "file", "/var/log/bootstrap.log", "Path to the bootstrap log file")
 	flag.UintVar(&port, "port", 8100, "Port to listen on")
 	flag.BoolVar(&v, "v", false, "Print version information")
@@ -38,11 +41,14 @@ func main() {
 		os.Exit(0)
 	}
 
-	if file == "" || port == 0 {
-		fmt.Println("Please specify a valid file name and port")
+	if file == "" || port == 0 || handlerPath == "" {
+		fmt.Println("Please specify a valid file name, handler endpoint and port")
 		flag.Usage()
 		os.Exit(1)
 	}
+
+	// clean the handler string
+	handler := validateHandler(handlerPath)
 
 	// check if file exists
 	_, err := os.Open(file)
@@ -53,7 +59,7 @@ func main() {
 	// listen on all interfaces (":") + port specified
 	host := ":" + fmt.Sprintf("%d", port)
 	mux := http.NewServeMux()
-	mux.Handle(logHandlerPath, status(file))
+	mux.Handle("/"+handler, status(file))
 	srv := http.Server{
 		Addr:         host,
 		Handler:      mux,
@@ -61,7 +67,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	log.Printf("starting http server on %s (listening on all interfaces)", host)
+	log.Printf("serving file %s on \"%s/%s\"", file, host, handler)
 	err = srv.ListenAndServe()
 	if err != nil {
 		log.Fatalf("error serving HTTP: %v", err)
@@ -72,4 +78,16 @@ func status(f string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, file)
 	}
+}
+
+func validateHandler(s string) string {
+	var handler string
+	// remove all non unicode letters and numbers
+	handler = strings.TrimFunc(s, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsNumber(r)
+	})
+	// remove whitespaces
+	handler = strings.Replace(handler, " ", "", -1)
+	handler = strings.ToLower(handler)
+	return handler
 }
