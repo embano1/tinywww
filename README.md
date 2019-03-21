@@ -17,7 +17,7 @@ Usage of tinywww:
   -v    Print version information
 ```
 
-## Example
+## Run the Binary
 
 ```bash
 $ ./tinywww -file example.file -handler "/test"
@@ -25,3 +25,9 @@ $ ./tinywww -file example.file -handler "/test"
 $ curl localhost:8100/test
 [...]
 ```
+
+## systemd Example Unit File
+
+An example systemd unit file can be found [here](tinywww.service). Borrowed and modified based on [this](https://medium.com/@benmorel/creating-a-linux-service-with-systemd-611b5c8b91d6) excellent blog post.
+
+> **Note:** Please modify the file as per your needs, e.g. paths, restart behavior, dependencies, etc.
