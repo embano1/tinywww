@@ -1,6 +1,8 @@
 # About
 
-Minimalistic web server to serve a static file, e.g. log file. Useful for building appliances and other systems where small footprint is preferred.
+Minimalistic web server to serve a static files, e.g. a log and status file under separate handlers. Useful for building appliances and other systems where small footprint is preferred.
+
+> **Note:** Right now two handlers are supported (i.e. two files). Open an issue and I'll work on improving this code ;)
 
 See the `Releases` section for pre-compiled builds and source code. Docker artifacts are also available, e.g. `embano1/tinywww:latest`.
 
@@ -8,21 +10,27 @@ See the `Releases` section for pre-compiled builds and source code. Docker artif
 
 ```bash
 Usage of tinywww:
-  -file string
-        Path to the bootstrap log file (default "/var/log/bootstrap.log")
   -handler string
-        Path where to register the http handler (default "/bootstrap")
+        Path where to register the file http handler (default "/bootstrap")
+  -logfile string
+        Path to the bootstrap log file (default "/var/log/bootstrap.log")
   -port uint
         Port to listen on (default 8100)
+  -status string
+        Path where to register the status http handler (default "/status")
+  -statusfile string
+        Path to the status file (default "/etc/issue")
   -v    Print version information
+
 ```
 
 ## Run the Binary
 
 ```bash
-$ ./tinywww -file example.file -handler "/test"
-2019/03/21 15:32:13 serving file example.file on ":8100/test"
-$ curl localhost:8100/test
+$ ./tinywww -logfile example.file -handler "/log" -statusfile "/etc/issue" -status "/status"
+2019/03/21 21:23:06 serving file example.file on ":8100/log"
+2019/03/21 21:23:06 serving file /etc/issue on ":8100/status"
+$ curl localhost:8100/status
 [...]
 ```
 
