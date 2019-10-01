@@ -1,3 +1,4 @@
 FROM alpine:3.7
 COPY tinywww /usr/sbin
+USER nobody:nobody
 ENTRYPOINT ["/usr/sbin/tinywww"]
