@@ -22,6 +22,10 @@ var (
 	logfile string
 	// status file (not path) to serve
 	statusfile string
+	// Kubernetes username and secrets files and mount path
+	userFile string
+	secretFile string
+	secretMountPath string
 	// port to listen on
 	port uint
 	// print version information
@@ -34,7 +38,9 @@ var (
 
 func main() {
 
-	// TODO: move handlers and file to strings and iterate over to reduce dup code
+	flag.StringVar(&userFile, "user", "basic-auth-user", "name of the Kubernetes file containing the username")
+	flag.StringVar(&secretFile, "secret", "basic-auth-password", "name of the Kubernetes file containing the password")
+	flag.StringVar(&secretMountPath, "mountpath", "/var/secrets", "mount path of the Kubernetes secret used")
 	flag.StringVar(&handlerPath, "handler", "/bootstrap", "Path where to register the file http handler")
 	flag.StringVar(&statusPath, "status", "/status", "Path where to register the status http handler")
 	flag.StringVar(&logfile, "logfile", "/var/log/bootstrap.log", "Path to the bootstrap log file")
@@ -48,8 +54,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	if logfile == "" || statusfile == "" || port == 0 || handlerPath == "" || statusPath == "" {
-		fmt.Println("Please specify a valid file names, handler endpoints and port")
+	if port == 0 || handlerPath == "" || statusPath == "" {
+		fmt.Println("Please specify valid handler endpoints and port")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -69,11 +75,22 @@ func main() {
 		log.Fatalf("error opening %s for reading: %v", statusfile, err)
 	}
 
+	credentialsReader := readBasicAuthFromDisk{
+		SecretMountPath:  secretMountPath,
+		UserFilename:     userFile,
+		PasswordFilename: secretFile,
+	}
+
+	credentials, err := credentialsReader.Read()
+	if err != nil {
+		log.Fatalf("unable to read basic auth credentials: %v", err)
+	}
+
 	// listen on all interfaces (":") + port specified
 	host := ":" + fmt.Sprintf("%d", port)
 	mux := http.NewServeMux()
-	mux.Handle("/"+filehandler, status(logfile))
-	mux.Handle("/"+statushandler, status(statusfile))
+	mux.Handle("/"+filehandler, decorateWithBasicAuth(status(logfile), credentials))
+	mux.Handle("/"+statushandler, decorateWithBasicAuth(status(statusfile), credentials))
 	srv := http.Server{
 		Addr:         host,
 		Handler:      mux,

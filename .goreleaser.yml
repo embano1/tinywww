@@ -3,8 +3,7 @@
 before:
   hooks:
 builds:
-- main: ./main.go
-  binary: tinywww
+- binary: tinywww
   env:
   - CGO_ENABLED=0
 archive:
