@@ -6,12 +6,6 @@ builds:
 - binary: tinywww
   env:
   - CGO_ENABLED=0
-archive:
-  replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -32,3 +26,9 @@ dockers:
     image_templates:
     - "embano1/tinywww:latest"
     - "embano1/tinywww:{{ .Tag }}"
+    build_flag_templates:
+    - "--label=org.opencontainers.image.created={{.Date}}"
+    - "--label=org.opencontainers.image.title={{.ProjectName}}"
+    - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+    - "--label=org.opencontainers.image.version={{.Version}}"
+    - "--label=org.opencontainers.image.authors=mgasch@vmware.com"
